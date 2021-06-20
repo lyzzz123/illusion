@@ -2,9 +2,9 @@ package handler
 
 import (
 	"errors"
-	"illusion/constant/httpmethod"
-	"illusion/handler/handlerwrapper"
-	"illusion/utils"
+	"github.com/lyzzz123/illusion/constant/httpmethod"
+	"github.com/lyzzz123/illusion/handler/handlerwrapper"
+	"github.com/lyzzz123/illusion/utils"
 	"reflect"
 	"regexp"
 )

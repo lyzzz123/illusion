@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"illusion/utils"
+	"github.com/lyzzz123/illusion/utils"
 	"net/http"
 	"sort"
 )

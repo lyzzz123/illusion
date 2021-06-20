@@ -2,7 +2,7 @@ package responsewriter
 
 import (
 	"encoding/json"
-	"illusion/handler/response"
+	"github.com/lyzzz123/illusion/handler/response"
 	"io"
 	"net/http"
 	"reflect"

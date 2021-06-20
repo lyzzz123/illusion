@@ -1,16 +1,16 @@
 package illusion
 
 import (
-	"illusion/config"
-	"illusion/converter/requestconverter"
-	"illusion/converter/responsewriter"
-	"illusion/converter/typeconverter"
-	"illusion/filter"
-	"illusion/handler"
-	"illusion/handler/exceptionhandler"
-	"illusion/listener"
-	"illusion/log"
-	"illusion/service"
+	"github.com/lyzzz123/illusion/config"
+	"github.com/lyzzz123/illusion/converter/requestconverter"
+	"github.com/lyzzz123/illusion/converter/responsewriter"
+	"github.com/lyzzz123/illusion/converter/typeconverter"
+	"github.com/lyzzz123/illusion/filter"
+	"github.com/lyzzz123/illusion/handler"
+	"github.com/lyzzz123/illusion/handler/exceptionhandler"
+	"github.com/lyzzz123/illusion/listener"
+	"github.com/lyzzz123/illusion/log"
+	"github.com/lyzzz123/illusion/service"
 	"net/http"
 	"reflect"
 )

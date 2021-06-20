@@ -2,7 +2,7 @@ package requestconverter
 
 import (
 	"encoding/json"
-	"illusion/handler/handlerwrapper"
+	"github.com/lyzzz123/illusion/handler/handlerwrapper"
 	"net/http"
 	"reflect"
 	"strings"

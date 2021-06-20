@@ -1,7 +1,7 @@
 package responsewriter
 
 import (
-	"illusion/handler/response"
+	"github.com/lyzzz123/illusion/handler/response"
 	"io"
 	"net/http"
 	"reflect"

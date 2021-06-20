@@ -2,10 +2,10 @@ package handler
 
 import (
 	"errors"
-	"illusion/converter/requestconverter"
-	"illusion/converter/responsewriter"
-	"illusion/handler/exceptionhandler"
-	"illusion/log"
+	"github.com/lyzzz123/illusion/converter/requestconverter"
+	"github.com/lyzzz123/illusion/converter/responsewriter"
+	"github.com/lyzzz123/illusion/handler/exceptionhandler"
+	"github.com/lyzzz123/illusion/log"
 	"net/http"
 	"reflect"
 )

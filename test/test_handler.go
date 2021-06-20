@@ -1,8 +1,8 @@
 package test
 
 import (
-	"illusion/handler/response"
-	"illusion/log"
+	"github.com/lyzzz123/illusion/handler/response"
+	"github.com/lyzzz123/illusion/log"
 	"io"
 	"mime/multipart"
 	"net/http"

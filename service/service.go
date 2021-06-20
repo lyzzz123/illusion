@@ -1,9 +1,9 @@
 package service
 
 import (
-	"illusion/filter"
-	"illusion/handler"
-	"illusion/log"
+	"github.com/lyzzz123/illusion/filter"
+	"github.com/lyzzz123/illusion/handler"
+	"github.com/lyzzz123/illusion/log"
 	"net/http"
 )
 

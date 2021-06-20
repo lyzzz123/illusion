@@ -1,8 +1,8 @@
 package requestconverter
 
 import (
-	"illusion/converter/typeconverter"
-	"illusion/handler/handlerwrapper"
+	"github.com/lyzzz123/illusion/converter/typeconverter"
+	"github.com/lyzzz123/illusion/handler/handlerwrapper"
 	"net/http"
 	"reflect"
 )

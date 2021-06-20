@@ -2,9 +2,9 @@ package test
 
 import (
 	"fmt"
-	"illusion"
-	"illusion/constant/httpmethod"
-	"illusion/filter"
+	"github.com/lyzzz123/illusion"
+	"github.com/lyzzz123/illusion/constant/httpmethod"
+	"github.com/lyzzz123/illusion/filter"
 	"reflect"
 	"testing"
 )
