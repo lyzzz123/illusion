@@ -58,6 +58,7 @@ func init() {
 	requestconverter.RegisterRequestConverter(&requestconverter.ApplicationJSONConverter{})
 	requestconverter.RegisterRequestConverter(&requestconverter.ApplicationXWWWFormUrlencodedConverter{})
 	requestconverter.RegisterRequestConverter(&requestconverter.MultipartFormDataConverter{})
+	requestconverter.RegisterRequestConverter(&requestconverter.GetMethodConverter{})
 
 	responsewriter.RegisterResponseWriter(&responsewriter.FileResponseWriter{})
 	responsewriter.RegisterResponseWriter(&responsewriter.JSONResponseWriter{})
