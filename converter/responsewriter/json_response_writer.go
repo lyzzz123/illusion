@@ -31,14 +31,6 @@ func (jsonResponseWriter JSONResponseWriter) Write(writer http.ResponseWriter, r
 	return nil
 }
 
-func (jsonResponseWriter JSONResponseWriter) Support(returnValue interface{}) bool {
-
-	if reflect.ValueOf(returnValue).Type() == jsonResponseType {
-		return true
-	}
-	return false
-}
-
-func (jsonResponseWriter JSONResponseWriter) Name() string {
-	return "JSONResponseWriter"
+func (jsonResponseWriter JSONResponseWriter) GetSupportResponseType() reflect.Type {
+	return jsonResponseType
 }

@@ -24,13 +24,6 @@ func (fileResponseWriter *FileResponseWriter) Write(writer http.ResponseWriter, 
 	return nil
 }
 
-func (fileResponseWriter *FileResponseWriter) Support(returnValue interface{}) bool {
-	if reflect.ValueOf(returnValue).Type() == fileResponseType {
-		return true
-	}
-	return false
-}
-
-func (fileResponseWriter *FileResponseWriter) Name() string {
-	return "FileResponseWriter"
+func (fileResponseWriter *FileResponseWriter) GetSupportResponseType() reflect.Type {
+	return fileResponseType
 }
