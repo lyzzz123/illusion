@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"github.com/lyzzz123/illusion/handler/response"
 	"github.com/lyzzz123/illusion/log"
 	"io"
@@ -92,4 +93,11 @@ type TestHandlerParam struct {
 
 	ResponseWriter http.ResponseWriter `json:"responseWriter"`
 	Request        *http.Request       `json:"request"`
+}
+
+func (testHandler *TestHandler) Protobuf(student *Student) (*response.ProtobufResponse, error) {
+	fmt.Println(student)
+
+	student.Age = student.Age + 10
+	return &response.ProtobufResponse{Data: student}, nil
 }

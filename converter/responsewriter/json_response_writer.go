@@ -13,7 +13,7 @@ var jsonResponseType = reflect.TypeOf(new(response.JSONResponse))
 type JSONResponseWriter struct {
 }
 
-func (jsonResponseWriter JSONResponseWriter) Write(writer http.ResponseWriter, returnValue interface{}) error {
+func (jsonResponseWriter *JSONResponseWriter) Write(writer http.ResponseWriter, returnValue interface{}) error {
 	writer.Header().Set("Content-Type", "application/json")
 
 	if returnValue == nil {
@@ -31,6 +31,6 @@ func (jsonResponseWriter JSONResponseWriter) Write(writer http.ResponseWriter, r
 	return nil
 }
 
-func (jsonResponseWriter JSONResponseWriter) GetSupportResponseType() reflect.Type {
+func (jsonResponseWriter *JSONResponseWriter) GetSupportResponseType() reflect.Type {
 	return jsonResponseType
 }

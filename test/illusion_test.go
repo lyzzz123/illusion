@@ -15,7 +15,7 @@ func TestToRegex(t *testing.T) {
 	//illusion.RegisterHandler("/getTest/{t1}/{t2}", []string{httpmethod.POST}, new(TestHandler1).GetTest1)
 
 	illusion.RegisterHandler("/getTest", []string{httpmethod.GET}, new(TestHandler2).GetTest2)
-
+	illusion.RegisterHandler("/protobuf", []string{httpmethod.POST}, new(TestHandler).Protobuf)
 	illusion.RegisterServiceListener(&TestListener{})
 
 	illusion.RegisterFilter(&filter.CorsFilter{})
