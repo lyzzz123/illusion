@@ -80,8 +80,8 @@ func (testLifeCycle *TestLifeCycle) AfterRunAction(objectContainer map[reflect.T
 }
 
 func TestToRegex(t *testing.T) {
-	//Register(&TestValue{})
-	//Register(&TestInject{})
+	Register(&TestValue{})
+	Register(&TestInject{})
 	Register(&TestLifeCycle{})
 
 	Start()
