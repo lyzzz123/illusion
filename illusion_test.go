@@ -1,4 +1,4 @@
-package illusioncontainer
+package illusion
 
 import (
 	"fmt"

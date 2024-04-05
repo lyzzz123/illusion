@@ -1,4 +1,4 @@
-package illusioncontainer
+package illusion
 
 import (
 	"github.com/lyzzz123/illusion/container"
