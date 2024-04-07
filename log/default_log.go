@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -70,17 +71,21 @@ func (defaultLog *DefaultLog) Init() {
 }
 
 func (defaultLog *DefaultLog) Debug(format string, args ...interface{}) {
+	format = strings.ReplaceAll(format, "{}", "%v")
 	logrus.Debugf(format, args...)
 }
 
 func (defaultLog *DefaultLog) Info(format string, args ...interface{}) {
+	format = strings.ReplaceAll(format, "{}", "%v")
 	logrus.Infof(format, args...)
 }
 
 func (defaultLog *DefaultLog) Warn(format string, args ...interface{}) {
+	format = strings.ReplaceAll(format, "{}", "%v")
 	logrus.Warnf(format, args...)
 }
 
 func (defaultLog *DefaultLog) Error(format string, args ...interface{}) {
+	format = strings.ReplaceAll(format, "{}", "%v")
 	logrus.Errorf(format, args...)
 }

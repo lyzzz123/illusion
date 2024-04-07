@@ -22,5 +22,5 @@ func TestLog(t *testing.T) {
 	illusion.Register(&log.DefaultLog{})
 	illusion.Register(&LogConfigure{})
 	illusion.Start()
-	log.Info("asdfasdf")
+	log.Info("asdfasdf:{}, ff:{}", "ffff", 2)
 }
