@@ -31,6 +31,7 @@ int.map.k1=1
 int.map.k2=2
 
 log.path=logs/log.log
+log.rotate.name=logs/log.%Y%m%d%H%M%S.log
 log.rotate.time=1
 log.rotate.size=1
 log.output=stdout
