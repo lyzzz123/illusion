@@ -11,7 +11,7 @@ type LogConfigure struct {
 	LogInstance log.Log `require:"true"`
 }
 
-func (logConfigure *LogConfigure) AfterInitInjectAction(objectContainer map[reflect.Type]interface{}) error {
+func (logConfigure *LogConfigure) AfterContainerInjectAction(objectContainer map[reflect.Type]interface{}) error {
 
 	log.RegisterLog(logConfigure.LogInstance)
 	return nil

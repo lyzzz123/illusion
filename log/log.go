@@ -2,9 +2,8 @@ package log
 
 var instance Log
 
-func RegisterLog(l Log) {
-	instance = l
-	instance.Init()
+func RegisterLog(logInstance Log) {
+	instance = logInstance
 }
 
 func Debug(format string, args ...interface{}) {
@@ -24,8 +23,6 @@ func Error(format string, args ...interface{}) {
 }
 
 type Log interface {
-	Init()
-
 	Debug(format string, args ...interface{})
 
 	Info(format string, args ...interface{})

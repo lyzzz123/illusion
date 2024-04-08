@@ -18,13 +18,13 @@ type MainContainer struct {
 
 	TypeConverterMap map[reflect.Type]converter.Converter
 
-	BeforeInitPropertyArray []lifecycle.BeforeInitProperty
+	BeforeContainerInitPropertyArray []lifecycle.BeforeContainerInitProperty
 
-	AfterInitPropertyArray []lifecycle.AfterInitProperty
+	AfterContainerInitPropertyArray []lifecycle.AfterContainerInitProperty
 
-	AfterInitConverterArray []lifecycle.AfterInitConverter
+	AfterContainerInitConverterArray []lifecycle.AfterContainerInitConverter
 
-	AfterInitInjectArray []lifecycle.AfterInitInject
+	AfterContainerInjectArray []lifecycle.AfterContainerInject
 
 	AfterRunArray []lifecycle.AfterRun
 }
@@ -246,6 +246,13 @@ func (mainContainer *MainContainer) Inject() {
 				panic("inject object must be pointer")
 			}
 		}
+		afterObjectInject, ok := object.(lifecycle.AfterObjectInject)
+		if ok {
+			if err := afterObjectInject.AfterObjectInjectAction(); err != nil {
+				panic(err)
+			}
+		}
+
 	}
 }
 
@@ -289,26 +296,26 @@ func (mainContainer *MainContainer) InitContainer() {
 	mainContainer.ObjectContainer = make(map[reflect.Type]interface{})
 	mainContainer.PropertiesArray = make([]map[string]string, 0)
 	mainContainer.TypeConverterMap = make(map[reflect.Type]converter.Converter)
-	mainContainer.BeforeInitPropertyArray = make([]lifecycle.BeforeInitProperty, 0)
-	mainContainer.AfterInitPropertyArray = make([]lifecycle.AfterInitProperty, 0)
-	mainContainer.AfterInitConverterArray = make([]lifecycle.AfterInitConverter, 0)
-	mainContainer.AfterInitInjectArray = make([]lifecycle.AfterInitInject, 0)
+	mainContainer.BeforeContainerInitPropertyArray = make([]lifecycle.BeforeContainerInitProperty, 0)
+	mainContainer.AfterContainerInitPropertyArray = make([]lifecycle.AfterContainerInitProperty, 0)
+	mainContainer.AfterContainerInitConverterArray = make([]lifecycle.AfterContainerInitConverter, 0)
+	mainContainer.AfterContainerInjectArray = make([]lifecycle.AfterContainerInject, 0)
 	mainContainer.AfterRunArray = make([]lifecycle.AfterRun, 0)
 }
 
-func (mainContainer *MainContainer) RegisterBeforeInitProperty(beforeInitProperty lifecycle.BeforeInitProperty) {
-	mainContainer.BeforeInitPropertyArray = append(mainContainer.BeforeInitPropertyArray, beforeInitProperty)
+func (mainContainer *MainContainer) RegisterBeforeInitProperty(beforeInitProperty lifecycle.BeforeContainerInitProperty) {
+	mainContainer.BeforeContainerInitPropertyArray = append(mainContainer.BeforeContainerInitPropertyArray, beforeInitProperty)
 }
 
-func (mainContainer *MainContainer) RegisterAfterInitProperty(afterInitProperty lifecycle.AfterInitProperty) {
-	mainContainer.AfterInitPropertyArray = append(mainContainer.AfterInitPropertyArray, afterInitProperty)
+func (mainContainer *MainContainer) RegisterAfterInitProperty(afterInitProperty lifecycle.AfterContainerInitProperty) {
+	mainContainer.AfterContainerInitPropertyArray = append(mainContainer.AfterContainerInitPropertyArray, afterInitProperty)
 }
 
-func (mainContainer *MainContainer) RegisterAfterInitConverter(afterInitConverter lifecycle.AfterInitConverter) {
-	mainContainer.AfterInitConverterArray = append(mainContainer.AfterInitConverterArray, afterInitConverter)
+func (mainContainer *MainContainer) RegisterAfterInitConverter(afterInitConverter lifecycle.AfterContainerInitConverter) {
+	mainContainer.AfterContainerInitConverterArray = append(mainContainer.AfterContainerInitConverterArray, afterInitConverter)
 }
-func (mainContainer *MainContainer) RegisterAfterInitInject(afterInitInject lifecycle.AfterInitInject) {
-	mainContainer.AfterInitInjectArray = append(mainContainer.AfterInitInjectArray, afterInitInject)
+func (mainContainer *MainContainer) RegisterAfterInitInject(afterInitInject lifecycle.AfterContainerInject) {
+	mainContainer.AfterContainerInjectArray = append(mainContainer.AfterContainerInjectArray, afterInitInject)
 }
 func (mainContainer *MainContainer) RegisterAfterRun(afterRun lifecycle.AfterRun) {
 	mainContainer.AfterRunArray = append(mainContainer.AfterRunArray, afterRun)
@@ -316,21 +323,21 @@ func (mainContainer *MainContainer) RegisterAfterRun(afterRun lifecycle.AfterRun
 
 func (mainContainer *MainContainer) InitLifeCycle() {
 	for _, registerObject := range mainContainer.ObjectContainer {
-		BeforeInitPropertyObject, ok := registerObject.(lifecycle.BeforeInitProperty)
+		BeforeInitPropertyObject, ok := registerObject.(lifecycle.BeforeContainerInitProperty)
 		if ok {
-			mainContainer.BeforeInitPropertyArray = append(mainContainer.BeforeInitPropertyArray, BeforeInitPropertyObject)
+			mainContainer.BeforeContainerInitPropertyArray = append(mainContainer.BeforeContainerInitPropertyArray, BeforeInitPropertyObject)
 		}
-		AfterInitPropertyObject, ok := registerObject.(lifecycle.AfterInitProperty)
+		AfterInitPropertyObject, ok := registerObject.(lifecycle.AfterContainerInitProperty)
 		if ok {
-			mainContainer.AfterInitPropertyArray = append(mainContainer.AfterInitPropertyArray, AfterInitPropertyObject)
+			mainContainer.AfterContainerInitPropertyArray = append(mainContainer.AfterContainerInitPropertyArray, AfterInitPropertyObject)
 		}
-		AfterInitConverterObject, ok := registerObject.(lifecycle.AfterInitConverter)
+		AfterInitConverterObject, ok := registerObject.(lifecycle.AfterContainerInitConverter)
 		if ok {
-			mainContainer.AfterInitConverterArray = append(mainContainer.AfterInitConverterArray, AfterInitConverterObject)
+			mainContainer.AfterContainerInitConverterArray = append(mainContainer.AfterContainerInitConverterArray, AfterInitConverterObject)
 		}
-		AfterInitInjectObject, ok := registerObject.(lifecycle.AfterInitInject)
+		AfterInitInjectObject, ok := registerObject.(lifecycle.AfterContainerInject)
 		if ok {
-			mainContainer.AfterInitInjectArray = append(mainContainer.AfterInitInjectArray, AfterInitInjectObject)
+			mainContainer.AfterContainerInjectArray = append(mainContainer.AfterContainerInjectArray, AfterInitInjectObject)
 		}
 		AfterRunObject, ok := registerObject.(lifecycle.AfterRun)
 		if ok {
@@ -343,26 +350,26 @@ func (mainContainer *MainContainer) Start() {
 
 	mainContainer.InitLifeCycle()
 
-	for _, value := range mainContainer.BeforeInitPropertyArray {
-		if err := value.BeforeInitPropertyAction(); err != nil {
+	for _, value := range mainContainer.BeforeContainerInitPropertyArray {
+		if err := value.BeforeContainerInitPropertyAction(); err != nil {
 			panic(err)
 		}
 	}
 	mainContainer.InitProperty()
-	for _, value := range mainContainer.AfterInitPropertyArray {
-		if err := value.AfterInitPropertyAction(mainContainer.PropertiesArray); err != nil {
+	for _, value := range mainContainer.AfterContainerInitPropertyArray {
+		if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
 			panic(err)
 		}
 	}
 	mainContainer.InitConverter()
-	for _, value := range mainContainer.AfterInitConverterArray {
-		if err := value.AfterInitConverterAction(mainContainer.TypeConverterMap); err != nil {
+	for _, value := range mainContainer.AfterContainerInitConverterArray {
+		if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
 			panic(err)
 		}
 	}
 	mainContainer.Inject()
-	for _, value := range mainContainer.AfterInitInjectArray {
-		if err := value.AfterInitInjectAction(mainContainer.ObjectContainer); err != nil {
+	for _, value := range mainContainer.AfterContainerInjectArray {
+		if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
 			panic(err)
 		}
 	}
