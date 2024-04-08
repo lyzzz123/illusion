@@ -16,8 +16,6 @@ type Formatter struct {
 }
 
 func (t Formatter) Format(entry *logrus.Entry) ([]byte, error) {
-	//根据不同的level展示颜色
-	var levelColor int
 	//字节缓冲区
 	var b *bytes.Buffer
 	if entry.Buffer != nil {
@@ -27,14 +25,10 @@ func (t Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 	//自定义日期格式
 	timestamp := entry.Time.Format("2006-01-02 15:04:06")
-	if entry.HasCaller() {
-		//自定义文件路径
-		pc, file, line, _ := runtime.Caller(10)
-		//自定义输出格式
-		fmt.Fprintf(b, "[%s][%s][%s][%s:%d] - %s\n", timestamp, entry.Level, runtime.FuncForPC(pc).Name(), path.Base(file), line, entry.Message)
-	} else {
-		fmt.Fprintf(b, "[%s] [%dm[%s] [0m %s %s %s \n", timestamp, levelColor, entry.Level, entry.Message)
-	}
+	//自定义文件路径
+	pc, file, line, _ := runtime.Caller(10)
+	//自定义输出格式
+	fmt.Fprintf(b, "[%s][%s][%s][%s:%d] - %s\n", timestamp, entry.Level, runtime.FuncForPC(pc).Name(), path.Base(file), line, entry.Message)
 	return b.Bytes(), nil
 }
 
