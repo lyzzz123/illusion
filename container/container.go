@@ -7,8 +7,10 @@ import (
 	"github.com/lyzzz123/illusion/lifecycle"
 	"github.com/lyzzz123/illusion/utils"
 	"os"
+	"os/signal"
 	"reflect"
 	"strings"
+	"syscall"
 )
 
 type MainContainer struct {
@@ -27,6 +29,8 @@ type MainContainer struct {
 	AfterContainerInjectArray []lifecycle.AfterContainerInject
 
 	AfterRunArray []lifecycle.AfterRun
+
+	AfterObjectDestroyArray []lifecycle.AfterObjectDestroy
 }
 
 func (mainContainer *MainContainer) GetProperty(key string) string {
@@ -301,6 +305,7 @@ func (mainContainer *MainContainer) InitContainer() {
 	mainContainer.AfterContainerInitConverterArray = make([]lifecycle.AfterContainerInitConverter, 0)
 	mainContainer.AfterContainerInjectArray = make([]lifecycle.AfterContainerInject, 0)
 	mainContainer.AfterRunArray = make([]lifecycle.AfterRun, 0)
+	mainContainer.AfterObjectDestroyArray = make([]lifecycle.AfterObjectDestroy, 0)
 }
 
 func (mainContainer *MainContainer) RegisterBeforeInitProperty(beforeInitProperty lifecycle.BeforeContainerInitProperty) {
@@ -343,39 +348,54 @@ func (mainContainer *MainContainer) InitLifeCycle() {
 		if ok {
 			mainContainer.AfterRunArray = append(mainContainer.AfterRunArray, AfterRunObject)
 		}
+		AfterObjectDestroyObject, ok := registerObject.(lifecycle.AfterObjectDestroy)
+		if ok {
+			mainContainer.AfterObjectDestroyArray = append(mainContainer.AfterObjectDestroyArray, AfterObjectDestroyObject)
+		}
 	}
 }
 
 func (mainContainer *MainContainer) Start() {
 
-	mainContainer.InitLifeCycle()
+	go func() {
+		mainContainer.InitLifeCycle()
 
-	for _, value := range mainContainer.BeforeContainerInitPropertyArray {
-		if err := value.BeforeContainerInitPropertyAction(); err != nil {
+		for _, value := range mainContainer.BeforeContainerInitPropertyArray {
+			if err := value.BeforeContainerInitPropertyAction(); err != nil {
+				panic(err)
+			}
+		}
+		mainContainer.InitProperty()
+		for _, value := range mainContainer.AfterContainerInitPropertyArray {
+			if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
+				panic(err)
+			}
+		}
+		mainContainer.InitConverter()
+		for _, value := range mainContainer.AfterContainerInitConverterArray {
+			if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
+				panic(err)
+			}
+		}
+		mainContainer.Inject()
+		for _, value := range mainContainer.AfterContainerInjectArray {
+			if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
+				panic(err)
+			}
+		}
+		for _, value := range mainContainer.AfterRunArray {
+			if err := value.AfterRunAction(mainContainer.ObjectContainer); err != nil {
+				panic(err)
+			}
+		}
+	}()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	<-quit
+	for _, value := range mainContainer.AfterObjectDestroyArray {
+		if err := value.AfterObjectDestroyAction(); err != nil {
 			panic(err)
 		}
 	}
-	mainContainer.InitProperty()
-	for _, value := range mainContainer.AfterContainerInitPropertyArray {
-		if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
-			panic(err)
-		}
-	}
-	mainContainer.InitConverter()
-	for _, value := range mainContainer.AfterContainerInitConverterArray {
-		if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
-			panic(err)
-		}
-	}
-	mainContainer.Inject()
-	for _, value := range mainContainer.AfterContainerInjectArray {
-		if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
-			panic(err)
-		}
-	}
-	for _, value := range mainContainer.AfterRunArray {
-		if err := value.AfterRunAction(mainContainer.ObjectContainer); err != nil {
-			panic(err)
-		}
-	}
+
 }
