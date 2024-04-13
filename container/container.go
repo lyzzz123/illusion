@@ -116,9 +116,10 @@ func (mainContainer *MainContainer) Register(object interface{}) {
 	mainContainer.ObjectContainer[objectType] = object
 }
 
-func (mainContainer *MainContainer) InjectBasicType(objectType reflect.Type, objectValue reflect.Value, index int) {
+func (mainContainer *MainContainer) InjectProperty(objectType reflect.Type, objectValue reflect.Value, index int) {
 	fieldType := objectType.Field(index)
 	property := fieldType.Tag.Get("property")
+	require := fieldType.Tag.Get("require")
 	if property != "" {
 		propertyStringValue := mainContainer.GetProperty(property)
 		propertyConverter, ok := mainContainer.TypeConverterMap[fieldType.Type]
@@ -129,7 +130,9 @@ func (mainContainer *MainContainer) InjectBasicType(objectType reflect.Type, obj
 			}
 			objectValue.Field(index).Set(reflect.ValueOf(propertyValue))
 		} else {
-			panic("can not find property converter:" + fieldType.Type.String())
+			if require != "" {
+				panic("can not find property converter:" + fieldType.Type.String())
+			}
 		}
 	}
 }
@@ -237,7 +240,7 @@ func (mainContainer *MainContainer) Inject() {
 		for i := 0; i < objectType.NumField(); i++ {
 			fieldType := objectType.Field(i)
 			if mainContainer.CanConvert(fieldType.Type) {
-				mainContainer.InjectBasicType(objectType, objectValue, i)
+				mainContainer.InjectProperty(objectType, objectValue, i)
 			} else if fieldType.Type.Kind() == reflect.Slice {
 				mainContainer.InjectSlice(objectType, objectValue, i)
 			} else if fieldType.Type.Kind() == reflect.Map {
@@ -319,9 +322,11 @@ func (mainContainer *MainContainer) RegisterAfterInitProperty(afterInitProperty 
 func (mainContainer *MainContainer) RegisterAfterInitConverter(afterInitConverter lifecycle.AfterContainerInitConverter) {
 	mainContainer.AfterContainerInitConverterArray = append(mainContainer.AfterContainerInitConverterArray, afterInitConverter)
 }
+
 func (mainContainer *MainContainer) RegisterAfterInitInject(afterInitInject lifecycle.AfterContainerInject) {
 	mainContainer.AfterContainerInjectArray = append(mainContainer.AfterContainerInjectArray, afterInitInject)
 }
+
 func (mainContainer *MainContainer) RegisterAfterRun(afterRun lifecycle.AfterRun) {
 	mainContainer.AfterRunArray = append(mainContainer.AfterRunArray, afterRun)
 }
@@ -351,6 +356,34 @@ func (mainContainer *MainContainer) InitLifeCycle() {
 		AfterObjectDestroyObject, ok := registerObject.(lifecycle.AfterObjectDestroy)
 		if ok {
 			mainContainer.AfterObjectDestroyArray = append(mainContainer.AfterObjectDestroyArray, AfterObjectDestroyObject)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) TestStart() {
+	mainContainer.InitLifeCycle()
+
+	for _, value := range mainContainer.BeforeContainerInitPropertyArray {
+		if err := value.BeforeContainerInitPropertyAction(); err != nil {
+			panic(err)
+		}
+	}
+	mainContainer.InitProperty()
+	for _, value := range mainContainer.AfterContainerInitPropertyArray {
+		if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
+			panic(err)
+		}
+	}
+	mainContainer.InitConverter()
+	for _, value := range mainContainer.AfterContainerInitConverterArray {
+		if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
+			panic(err)
+		}
+	}
+	mainContainer.Inject()
+	for _, value := range mainContainer.AfterContainerInjectArray {
+		if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
+			panic(err)
 		}
 	}
 }
@@ -397,5 +430,4 @@ func (mainContainer *MainContainer) Start() {
 			panic(err)
 		}
 	}
-
 }
