@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lyzzz123/illusion/converter"
 	"github.com/lyzzz123/illusion/lifecycle"
+	"github.com/lyzzz123/illusion/proxy"
 	"github.com/lyzzz123/illusion/utils"
 	"os"
 	"os/signal"
@@ -15,6 +16,8 @@ import (
 
 type MainContainer struct {
 	ObjectContainer map[reflect.Type]interface{}
+
+	ProxyMap map[reflect.Type]proxy.Proxy
 
 	PropertiesArray []map[string]string
 
@@ -107,13 +110,17 @@ func (mainContainer *MainContainer) CanConvert(typ reflect.Type) bool {
 }
 
 func (mainContainer *MainContainer) Register(object interface{}) {
-	pv1 := reflect.ValueOf(object)
-	if pv1.Kind() != reflect.Ptr {
+	if proxyObject, ok := object.(proxy.Proxy); ok {
+		mainContainer.ProxyMap[proxyObject.SupportInterface()] = proxyObject
+	} else {
+		pv1 := reflect.ValueOf(object)
+		if pv1.Kind() != reflect.Ptr {
+			objectType := reflect.TypeOf(object)
+			panic("register must be a pointer:" + objectType.String())
+		}
 		objectType := reflect.TypeOf(object)
-		panic("register must be a pointer:" + objectType.String())
+		mainContainer.ObjectContainer[objectType] = object
 	}
-	objectType := reflect.TypeOf(object)
-	mainContainer.ObjectContainer[objectType] = object
 }
 
 func (mainContainer *MainContainer) InjectProperty(objectType reflect.Type, objectValue reflect.Value, index int) {
@@ -199,38 +206,44 @@ func (mainContainer *MainContainer) InjectInterface(objectType reflect.Type, obj
 		return
 	}
 	injectCount := 0
+	var findInterface interface{} = nil
 	for _, registerObject := range mainContainer.ObjectContainer {
 		if utils.Implement(registerObject, fieldType.Type) {
 			injectCount++
-			fieldValue.Set(reflect.ValueOf(registerObject))
+			findInterface = registerObject
 		}
 	}
 	if injectCount >= 2 {
 		panic(fieldType.Type.String() + " has more than two instances")
-	}
-	if require == "true" && injectCount == 0 {
+	} else if injectCount == 1 {
+		if proxy, ok := mainContainer.ProxyMap[fieldType.Type]; ok {
+			proxy.SetTarget(findInterface)
+			fieldValue.Set(reflect.ValueOf(proxy))
+		} else {
+			fieldValue.Set(reflect.ValueOf(findInterface))
+		}
+	} else if injectCount == 0 && require == "true" {
 		panic(fieldType.Type.String() + " must has one instances")
 	}
+
 }
 
 func (mainContainer *MainContainer) InjectObject(objectType reflect.Type, objectValue reflect.Value, index int) {
 	fieldType := objectType.Field(index)
 	fieldValue := objectValue.Field(index)
-	//防止循环依赖
-	//if fieldValue.IsNil(){
+
 	require := fieldType.Tag.Get("require")
 	if require == "" {
 		return
 	}
 	o := mainContainer.ObjectContainer[fieldValue.Type()]
-	if require == "true" && o == nil {
-		panic("inject object can not find " + fieldValue.Type().String())
+	if o != nil {
+		fieldValue.Set(reflect.ValueOf(o))
+	} else {
+		if require == "true" {
+			panic("inject object can not find " + fieldValue.Type().String())
+		}
 	}
-	if require != "true" && o == nil {
-		return
-	}
-	fieldValue.Set(reflect.ValueOf(o))
-	//}
 }
 
 func (mainContainer *MainContainer) Inject() {
@@ -301,6 +314,7 @@ func (mainContainer *MainContainer) InitConverter() {
 
 func (mainContainer *MainContainer) InitContainer() {
 	mainContainer.ObjectContainer = make(map[reflect.Type]interface{})
+	mainContainer.ProxyMap = make(map[reflect.Type]proxy.Proxy)
 	mainContainer.PropertiesArray = make([]map[string]string, 0)
 	mainContainer.TypeConverterMap = make(map[reflect.Type]converter.Converter)
 	mainContainer.BeforeContainerInitPropertyArray = make([]lifecycle.BeforeContainerInitProperty, 0)
