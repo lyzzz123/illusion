@@ -2,7 +2,6 @@ package container
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/lyzzz123/illusion/converter"
 	"github.com/lyzzz123/illusion/lifecycle"
 	"github.com/lyzzz123/illusion/proxy"
@@ -116,7 +115,7 @@ func (mainContainer *MainContainer) Register(object interface{}) {
 		pv1 := reflect.ValueOf(object)
 		if pv1.Kind() != reflect.Ptr {
 			objectType := reflect.TypeOf(object)
-			panic("register must be a pointer:" + objectType.String())
+			panic("register must be a pointer, register object type:" + objectType.String())
 		}
 		objectType := reflect.TypeOf(object)
 		mainContainer.ObjectContainer[objectType] = object
@@ -126,19 +125,23 @@ func (mainContainer *MainContainer) Register(object interface{}) {
 func (mainContainer *MainContainer) InjectProperty(objectType reflect.Type, objectValue reflect.Value, index int) {
 	fieldType := objectType.Field(index)
 	property := fieldType.Tag.Get("property")
-	require := fieldType.Tag.Get("require")
+	//require := fieldType.Tag.Get("require")
 	if property != "" {
-		propertyStringValue := mainContainer.GetProperty(property)
-		propertyConverter, ok := mainContainer.TypeConverterMap[fieldType.Type]
-		if ok {
-			propertyValue, err := propertyConverter.Convert(propertyStringValue)
-			if err != nil {
-				panic(err)
+		properties := strings.Split(property, ",")
+		propertyStringValue := mainContainer.GetProperty(strings.TrimSpace(properties[0]))
+		if propertyStringValue != "" {
+			if propertyConverter, ok := mainContainer.TypeConverterMap[fieldType.Type]; ok {
+				if propertyValue, err := propertyConverter.Convert(propertyStringValue); err != nil {
+					panic(err)
+				} else {
+					objectValue.Field(index).Set(reflect.ValueOf(propertyValue))
+				}
+			} else {
+				panic("not find a type converter for property:" + properties[0])
 			}
-			objectValue.Field(index).Set(reflect.ValueOf(propertyValue))
 		} else {
-			if require != "" {
-				panic("can not find property converter:" + fieldType.Type.String())
+			if len(properties) > 1 && strings.TrimSpace(properties[1]) == "true" {
+				panic("can not find value for property:" + properties[0])
 			}
 		}
 	}
@@ -148,19 +151,25 @@ func (mainContainer *MainContainer) InjectSlice(objectType reflect.Type, objectV
 	sliceType := objectType.Field(index)
 	property := sliceType.Tag.Get("property")
 	if property != "" {
-		propertyStringValue := mainContainer.GetProperty(property)
-		propertyConverter, ok := mainContainer.TypeConverterMap[sliceType.Type.Elem()]
-		if ok {
-			values := strings.Split(propertyStringValue, ",")
-			for _, v := range values {
-				propertyValue, err := propertyConverter.Convert(v)
-				if err != nil {
-					panic(err)
+		properties := strings.Split(property, ",")
+		propertyStringValue := mainContainer.GetProperty(strings.TrimSpace(properties[0]))
+		if propertyStringValue != "" {
+			if propertyConverter, ok := mainContainer.TypeConverterMap[sliceType.Type.Elem()]; ok {
+				values := strings.Split(propertyStringValue, ",")
+				for _, v := range values {
+					propertyValue, err := propertyConverter.Convert(v)
+					if err != nil {
+						panic(err)
+					}
+					objectValue.Field(index).Set(reflect.Append(objectValue.Field(index), reflect.ValueOf(propertyValue)))
 				}
-				objectValue.Field(index).Set(reflect.Append(objectValue.Field(index), reflect.ValueOf(propertyValue)))
+			} else {
+				panic("not find a type converter for property:" + properties[0])
 			}
 		} else {
-			panic("can not find property converter:" + sliceType.Type.Elem().String())
+			if len(properties) > 1 && strings.TrimSpace(properties[1]) == "true" {
+				panic("can not find value for property:" + properties[0])
+			}
 		}
 	}
 }
@@ -168,31 +177,30 @@ func (mainContainer *MainContainer) InjectSlice(objectType reflect.Type, objectV
 func (mainContainer *MainContainer) InjectMap(objectType reflect.Type, objectValue reflect.Value, index int) {
 	fieldType := objectType.Field(index)
 	fieldValue := objectValue.Field(index)
-
 	property := fieldType.Tag.Get("property")
 	if property != "" {
-		//获取的配置中的值
-		propertiesMap := mainContainer.GetPropertyMap(property)
-		if len(propertiesMap) == 0 {
-			panic("properties map not config:" + fieldType.Type.String())
-		}
-		//要注入的map的value的类型
-		t := objectValue.Field(index).Type()
-		fmt.Println(t)
-		fmt.Println(t.Elem())
-		propertyConverter, ok := mainContainer.TypeConverterMap[t.Elem()]
-		if ok {
-			injectMap := reflect.MakeMap(t)
-			for configKey, configValue := range propertiesMap {
-				propertyValue, err := propertyConverter.Convert(configValue)
-				if err != nil {
-					panic(err)
+		properties := strings.Split(property, ",")
+		propertiesMap := mainContainer.GetPropertyMap(strings.TrimSpace(properties[0]))
+		if len(propertiesMap) != 0 {
+			//要注入的map的value的类型
+			t := objectValue.Field(index).Type()
+			if propertyConverter, ok := mainContainer.TypeConverterMap[t.Elem()]; ok {
+				injectMap := reflect.MakeMap(t)
+				for configKey, configValue := range propertiesMap {
+					propertyValue, err := propertyConverter.Convert(configValue)
+					if err != nil {
+						panic(err)
+					}
+					injectMap.SetMapIndex(reflect.ValueOf(configKey), reflect.ValueOf(propertyValue))
 				}
-				injectMap.SetMapIndex(reflect.ValueOf(configKey), reflect.ValueOf(propertyValue))
+				fieldValue.Set(reflect.ValueOf(injectMap.Interface()))
+			} else {
+				panic("not find a type converter for property:" + properties[0])
 			}
-			fieldValue.Set(reflect.ValueOf(injectMap.Interface()))
 		} else {
-			panic("can not find property converter:" + fieldType.Type.String())
+			if len(properties) > 1 && strings.TrimSpace(properties[1]) == "true" {
+				panic("can not find value for property:" + properties[0])
+			}
 		}
 	}
 }
@@ -223,7 +231,7 @@ func (mainContainer *MainContainer) InjectInterface(objectType reflect.Type, obj
 			fieldValue.Set(reflect.ValueOf(findInterface))
 		}
 	} else if injectCount == 0 && require == "true" {
-		panic(fieldType.Type.String() + " must has one instances")
+		panic(fieldType.Type.String() + " must has one instance")
 	}
 
 }
@@ -263,7 +271,7 @@ func (mainContainer *MainContainer) Inject() {
 			} else if fieldType.Type.Kind() == reflect.Ptr {
 				mainContainer.InjectObject(objectType, objectValue, i)
 			} else {
-				panic("inject object must be pointer")
+				panic("inject object must be pointer:" + objectType.String())
 			}
 		}
 		afterObjectInject, ok := object.(lifecycle.AfterObjectInject)

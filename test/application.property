@@ -37,4 +37,4 @@ log.rotate.size=1
 log.output=stdout
 log.level=debug
 
-
+log.name0=logName

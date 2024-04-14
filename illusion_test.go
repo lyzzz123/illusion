@@ -38,8 +38,8 @@ type TestValue struct {
 	Uintuint     uint    `property:"uint.uint"`
 	Uintptr      *uint   `property:"uint.ptr"`
 
-	IntSlice []int          `property:"int.slice"`
-	IntMap   map[string]int `property:"int.map"`
+	IntSlice []int          `property:"int.slice, true"`
+	IntMap   map[string]int `property:"int.map, false"`
 }
 
 func (testValue *TestValue) Hello() {
@@ -80,10 +80,11 @@ func (testLifeCycle *TestLifeCycle) AfterRunAction(objectContainer map[reflect.T
 }
 
 func TestToRegex(t *testing.T) {
-	Register(&TestValue{})
+	eeef := &TestValue{}
+	Register(eeef)
 	Register(&TestInject{})
 	Register(&TestLifeCycle{})
 
-	Start()
-
+	TestStart()
+	fmt.Println("sdfasd")
 }

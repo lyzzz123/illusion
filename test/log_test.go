@@ -9,6 +9,7 @@ import (
 
 type LogConfigure struct {
 	LogInstance log.Log `require:"true"`
+	TestLogName string  `property:"log.name, false"`
 }
 
 func (logConfigure *LogConfigure) AfterContainerInjectAction(objectContainer map[reflect.Type]interface{}) error {
@@ -56,7 +57,8 @@ func TestLog(t *testing.T) {
 
 	illusion.Register(&log.DefaultLog{})
 	illusion.Register(&LogProxy{})
-	illusion.Register(&LogConfigure{})
+	logConfigure := &LogConfigure{}
+	illusion.Register(logConfigure)
 	illusion.TestStart()
 	log.Info("asdfasdf:{}, ff:{}", "ffff", 2)
 }
