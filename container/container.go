@@ -416,6 +416,10 @@ func (mainContainer *MainContainer) Start() {
 	closeChannel := make(chan int, 1)
 
 	go func() {
+		defer func() {
+			closeChannel <- 1
+		}()
+
 		mainContainer.InitLifeCycle()
 
 		for _, value := range mainContainer.BeforeContainerInitPropertyArray {
@@ -446,7 +450,7 @@ func (mainContainer *MainContainer) Start() {
 				panic(err)
 			}
 		}
-		closeChannel <- 1
+
 	}()
 	select {
 	case <-quitChannel:
