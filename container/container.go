@@ -87,6 +87,22 @@ func (mainContainer *MainContainer) LoadFileProperty(propertyFile string) {
 	mainContainer.PropertiesArray = append(mainContainer.PropertiesArray, propertyMap)
 }
 
+func (mainContainer *MainContainer) LoadCmdProperty() {
+	propertyMap := make(map[string]string)
+	cmdProperties := os.Args[1:]
+	for i := 0; i < len(cmdProperties); i++ {
+		cmdProperty := cmdProperties[i]
+		if strings.HasPrefix(cmdProperty, "#") {
+			cmdPropertyKV := strings.Split(strings.TrimLeft(cmdProperty, "#"), "=")
+			if len(cmdPropertyKV) == 2 {
+				propertyMap[strings.TrimSpace(cmdPropertyKV[0])] = strings.TrimSpace(cmdPropertyKV[1])
+			}
+		}
+
+	}
+	mainContainer.PropertiesArray = append(mainContainer.PropertiesArray, propertyMap)
+}
+
 func (mainContainer *MainContainer) LoadSystemProperty() {
 	propertyMap := make(map[string]string)
 	env := os.Environ()
@@ -285,8 +301,14 @@ func (mainContainer *MainContainer) Inject() {
 }
 
 func (mainContainer *MainContainer) InitProperty() {
+	mainContainer.LoadCmdProperty()
 	mainContainer.LoadSystemProperty()
 	mainContainer.LoadFileProperty("application.property")
+	active := mainContainer.GetProperty("environment.active")
+	if active != "" {
+		activeNamePath := "application-" + active + ".property"
+		mainContainer.LoadFileProperty(activeNamePath)
+	}
 }
 
 func (mainContainer *MainContainer) InitConverter() {

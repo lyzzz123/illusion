@@ -37,6 +37,7 @@ type TestValue struct {
 	Uint64ptr    *uint64 `property:"uint64.ptr"`
 	Uintuint     uint    `property:"uint.uint"`
 	Uintptr      *uint   `property:"uint.ptr"`
+	Uintptrq     *uint   `property:"uint.ptrq"`
 
 	IntSlice []int          `property:"int.slice, true"`
 	IntMap   map[string]int `property:"int.map, false"`
