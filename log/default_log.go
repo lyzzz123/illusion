@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
+	"reflect"
 	"runtime"
 	"strings"
 	"time"
@@ -33,12 +34,12 @@ func (t Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 type DefaultLog struct {
-	Path       string `property:"log.path"`
-	RotateName string `property:"log.rotate.name"`
-	RotateTime int    `property:"log.rotate.time"`
-	RotateSize int64  `property:"log.rotate.size"`
-	Output     string `property:"log.output"`
-	Level      string `property:"log.level"`
+	Path       string `property:"log.path, false"`
+	RotateName string `property:"log.rotate.name, false"`
+	RotateTime int    `property:"log.rotate.time, false"`
+	RotateSize int64  `property:"log.rotate.size, false"`
+	Output     string `property:"log.output, false"`
+	Level      string `property:"log.level, false"`
 }
 
 func (defaultLog *DefaultLog) AfterObjectInjectAction() error {
@@ -62,6 +63,11 @@ func (defaultLog *DefaultLog) AfterObjectInjectAction() error {
 		)
 		logrus.SetOutput(writer)
 	}
+	return nil
+}
+
+func (defaultLog *DefaultLog) AfterContainerInjectAction(objectContainer map[reflect.Type]interface{}) error {
+	RegisterLog(defaultLog)
 	return nil
 }
 
