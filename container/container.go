@@ -411,6 +411,9 @@ func (mainContainer *MainContainer) TestStart() {
 }
 
 func (mainContainer *MainContainer) Start() {
+	quitChannel := make(chan os.Signal, 1)
+	signal.Notify(quitChannel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	closeChannel := make(chan int, 1)
 
 	go func() {
 		mainContainer.InitLifeCycle()
@@ -443,10 +446,12 @@ func (mainContainer *MainContainer) Start() {
 				panic(err)
 			}
 		}
+		closeChannel <- 1
 	}()
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	<-quit
+	select {
+	case <-quitChannel:
+	case <-closeChannel:
+	}
 	for _, value := range mainContainer.AfterObjectDestroyArray {
 		if err := value.AfterObjectDestroyAction(); err != nil {
 			panic(err)
