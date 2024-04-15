@@ -1,6 +1,6 @@
 # illusion
 ## illusion是什么
-illusion是用go语言开发的一个开源容器，illusion提供struct的对象托管和对象生命周期管理，同时支持控制反转（IoC）来实现解耦。
+illusion是用go语言开发的一个开源容器，illusion提供struct的对象托管和对象生命周期管理，同时支持控制反转（IoC）来实现解耦。配合illusionmvc可以实现一个web服务。
 ## 快速开始
 首先定义一个struct，之后将struct创建出来的对象放到illusion容器中，这就实现了一个对象的托管，示例代码如下
 ```
