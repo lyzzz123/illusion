@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"sort"
 	"strings"
 	"syscall"
 )
@@ -32,7 +33,7 @@ type MainContainer struct {
 
 	AfterRunArray []lifecycle.AfterRun
 
-	AfterObjectDestroyArray []lifecycle.AfterObjectDestroy
+	AfterContainerDestroyArray []lifecycle.AfterContainerDestroy
 }
 
 func (mainContainer *MainContainer) GetProperty(key string) string {
@@ -290,13 +291,6 @@ func (mainContainer *MainContainer) Inject() {
 				panic("inject object must be pointer:" + objectType.String())
 			}
 		}
-		afterObjectInject, ok := object.(lifecycle.AfterObjectInject)
-		if ok {
-			if err := afterObjectInject.AfterObjectInjectAction(); err != nil {
-				panic(err)
-			}
-		}
-
 	}
 }
 
@@ -352,7 +346,7 @@ func (mainContainer *MainContainer) InitContainer() {
 	mainContainer.AfterContainerInitConverterArray = make([]lifecycle.AfterContainerInitConverter, 0)
 	mainContainer.AfterContainerInjectArray = make([]lifecycle.AfterContainerInject, 0)
 	mainContainer.AfterRunArray = make([]lifecycle.AfterRun, 0)
-	mainContainer.AfterObjectDestroyArray = make([]lifecycle.AfterObjectDestroy, 0)
+	mainContainer.AfterContainerDestroyArray = make([]lifecycle.AfterContainerDestroy, 0)
 }
 
 func (mainContainer *MainContainer) RegisterBeforeInitProperty(beforeInitProperty lifecycle.BeforeContainerInitProperty) {
@@ -397,39 +391,22 @@ func (mainContainer *MainContainer) InitLifeCycle() {
 		if ok {
 			mainContainer.AfterRunArray = append(mainContainer.AfterRunArray, AfterRunObject)
 		}
-		AfterObjectDestroyObject, ok := registerObject.(lifecycle.AfterObjectDestroy)
+		AfterContainerDestroyObject, ok := registerObject.(lifecycle.AfterContainerDestroy)
 		if ok {
-			mainContainer.AfterObjectDestroyArray = append(mainContainer.AfterObjectDestroyArray, AfterObjectDestroyObject)
+			mainContainer.AfterContainerDestroyArray = append(mainContainer.AfterContainerDestroyArray, AfterContainerDestroyObject)
 		}
 	}
 }
 
 func (mainContainer *MainContainer) TestStart() {
 	mainContainer.InitLifeCycle()
-
-	for _, value := range mainContainer.BeforeContainerInitPropertyArray {
-		if err := value.BeforeContainerInitPropertyAction(); err != nil {
-			panic(err)
-		}
-	}
+	mainContainer.executeBeforeContainerInitPropertyArray()
 	mainContainer.InitProperty()
-	for _, value := range mainContainer.AfterContainerInitPropertyArray {
-		if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
-			panic(err)
-		}
-	}
+	mainContainer.executeAfterContainerInitPropertyArray()
 	mainContainer.InitConverter()
-	for _, value := range mainContainer.AfterContainerInitConverterArray {
-		if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
-			panic(err)
-		}
-	}
+	mainContainer.executeAfterContainerInitConverterArray()
 	mainContainer.Inject()
-	for _, value := range mainContainer.AfterContainerInjectArray {
-		if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
-			panic(err)
-		}
-	}
+	mainContainer.executeAfterContainerInjectArray()
 }
 
 func (mainContainer *MainContainer) Start() {
@@ -441,45 +418,84 @@ func (mainContainer *MainContainer) Start() {
 		defer func() {
 			closeChannel <- 1
 		}()
-
 		mainContainer.InitLifeCycle()
-
-		for _, value := range mainContainer.BeforeContainerInitPropertyArray {
-			if err := value.BeforeContainerInitPropertyAction(); err != nil {
-				panic(err)
-			}
-		}
+		mainContainer.executeBeforeContainerInitPropertyArray()
 		mainContainer.InitProperty()
-		for _, value := range mainContainer.AfterContainerInitPropertyArray {
-			if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
-				panic(err)
-			}
-		}
+		mainContainer.executeAfterContainerInitPropertyArray()
 		mainContainer.InitConverter()
-		for _, value := range mainContainer.AfterContainerInitConverterArray {
-			if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
-				panic(err)
-			}
-		}
+		mainContainer.executeAfterContainerInitConverterArray()
 		mainContainer.Inject()
-		for _, value := range mainContainer.AfterContainerInjectArray {
-			if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
-				panic(err)
-			}
-		}
-		for _, value := range mainContainer.AfterRunArray {
-			if err := value.AfterRunAction(mainContainer.ObjectContainer); err != nil {
-				panic(err)
-			}
-		}
-
+		mainContainer.executeAfterContainerInjectArray()
+		mainContainer.executeAfterRunArray()
 	}()
 	select {
 	case <-quitChannel:
 	case <-closeChannel:
 	}
-	for _, value := range mainContainer.AfterObjectDestroyArray {
-		if err := value.AfterObjectDestroyAction(); err != nil {
+	mainContainer.executeAfterContainerDestroyArray()
+}
+
+func (mainContainer *MainContainer) executeBeforeContainerInitPropertyArray() {
+	sort.SliceStable(mainContainer.BeforeContainerInitPropertyArray, func(i, j int) bool {
+		return mainContainer.BeforeContainerInitPropertyArray[i].GetPriority() > mainContainer.BeforeContainerInitPropertyArray[j].GetPriority()
+	})
+	for _, value := range mainContainer.BeforeContainerInitPropertyArray {
+		if err := value.BeforeContainerInitPropertyAction(); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) executeAfterContainerInitPropertyArray() {
+	sort.SliceStable(mainContainer.AfterContainerInitPropertyArray, func(i, j int) bool {
+		return mainContainer.AfterContainerInitPropertyArray[i].GetPriority() > mainContainer.AfterContainerInitPropertyArray[j].GetPriority()
+	})
+	for _, value := range mainContainer.AfterContainerInitPropertyArray {
+		if err := value.AfterContainerInitPropertyAction(mainContainer.PropertiesArray); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) executeAfterContainerInitConverterArray() {
+	sort.SliceStable(mainContainer.AfterContainerInitConverterArray, func(i, j int) bool {
+		return mainContainer.AfterContainerInitConverterArray[i].GetPriority() > mainContainer.AfterContainerInitConverterArray[j].GetPriority()
+	})
+	for _, value := range mainContainer.AfterContainerInitConverterArray {
+		if err := value.AfterContainerInitConverterAction(mainContainer.TypeConverterMap); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) executeAfterContainerInjectArray() {
+	sort.SliceStable(mainContainer.AfterContainerInjectArray, func(i, j int) bool {
+		return mainContainer.AfterContainerInjectArray[i].GetPriority() > mainContainer.AfterContainerInjectArray[j].GetPriority()
+	})
+	for _, value := range mainContainer.AfterContainerInjectArray {
+		if err := value.AfterContainerInjectAction(mainContainer.ObjectContainer); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) executeAfterRunArray() {
+	sort.SliceStable(mainContainer.AfterRunArray, func(i, j int) bool {
+		return mainContainer.AfterRunArray[i].GetPriority() > mainContainer.AfterRunArray[j].GetPriority()
+	})
+	for _, value := range mainContainer.AfterRunArray {
+		if err := value.AfterRunAction(mainContainer.ObjectContainer); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) executeAfterContainerDestroyArray() {
+	sort.SliceStable(mainContainer.AfterContainerDestroyArray, func(i, j int) bool {
+		return mainContainer.AfterContainerDestroyArray[i].GetPriority() > mainContainer.AfterContainerDestroyArray[j].GetPriority()
+	})
+	for _, value := range mainContainer.AfterContainerDestroyArray {
+		if err := value.AfterContainerDestroyAction(mainContainer.ObjectContainer); err != nil {
 			panic(err)
 		}
 	}

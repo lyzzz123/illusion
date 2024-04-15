@@ -7,4 +7,5 @@ import (
 
 type AfterContainerInitConverter interface {
 	AfterContainerInitConverterAction(typeConverterMap map[reflect.Type]converter.Converter) error
+	GetPriority() int
 }
