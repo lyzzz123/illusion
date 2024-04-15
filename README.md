@@ -64,7 +64,7 @@ func main() {
 type ObjectLifeCycleTest struct {
 
 }
-//单个对象的属性全部注入完成之后
+//单个对象的属性全部注入完成之后, 可以在这里执行像消息队列连接之类等初始化操作
 func (objectLifeCycleTest *ObjectLifeCycleTest) AfterObjectInjectAction() error {
 	fmt.Println("AfterObjectInjectAction")
 	return nil
@@ -98,3 +98,19 @@ illusion强制使用application.property为属性文件，文件内容为key=val
 如果以上三种形式的属性中存在environment.active=xxx的属性，那么程序会继续加载名为application-xxx.property的属性文件。例如environment.active的属性值为dev，那么程序就会继续加载名为application-dev.property的属性文件
 ### 属性的优先级
 命令行参数加载属性 > 系统环境变量加载属性 > application.property属性 > application-xxx.property属性
+
+## 静态代理
+illusion支持对托管对象的静态代理
+```
+type Proxy interface {
+    SupportInterface() reflect.Type
+    SetTarget(target interface{})
+}
+```
+这是代理接口，被代理的对象必须实现了某个接口，而这个接口的类型需要作为SupportInterface()的返回值。SetTarget(target interface{})用来设置被代理对象。
+例子如下
+```
+
+```
+
+
