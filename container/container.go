@@ -34,6 +34,10 @@ type MainContainer struct {
 	AfterRunArray []lifecycle.AfterRun
 
 	AfterContainerDestroyArray []lifecycle.AfterContainerDestroy
+
+	AfterObjectInjectArray []lifecycle.AfterObjectInject
+
+	AfterObjectDestroyArray []lifecycle.AfterObjectDestroy
 }
 
 func (mainContainer *MainContainer) GetProperty(key string) string {
@@ -347,6 +351,9 @@ func (mainContainer *MainContainer) InitContainer() {
 	mainContainer.AfterContainerInjectArray = make([]lifecycle.AfterContainerInject, 0)
 	mainContainer.AfterRunArray = make([]lifecycle.AfterRun, 0)
 	mainContainer.AfterContainerDestroyArray = make([]lifecycle.AfterContainerDestroy, 0)
+	mainContainer.AfterObjectInjectArray = make([]lifecycle.AfterObjectInject, 0)
+	mainContainer.AfterObjectDestroyArray = make([]lifecycle.AfterObjectDestroy, 0)
+
 }
 
 func (mainContainer *MainContainer) RegisterBeforeInitProperty(beforeInitProperty lifecycle.BeforeContainerInitProperty) {
@@ -395,6 +402,14 @@ func (mainContainer *MainContainer) InitLifeCycle() {
 		if ok {
 			mainContainer.AfterContainerDestroyArray = append(mainContainer.AfterContainerDestroyArray, AfterContainerDestroyObject)
 		}
+		afterObjectInjectObject, ok := registerObject.(lifecycle.AfterObjectInject)
+		if ok {
+			mainContainer.AfterObjectInjectArray = append(mainContainer.AfterObjectInjectArray, afterObjectInjectObject)
+		}
+		afterObjectDestroyObject, ok := registerObject.(lifecycle.AfterObjectDestroy)
+		if ok {
+			mainContainer.AfterObjectDestroyArray = append(mainContainer.AfterObjectDestroyArray, afterObjectDestroyObject)
+		}
 	}
 }
 
@@ -406,7 +421,9 @@ func (mainContainer *MainContainer) TestStart() {
 	mainContainer.InitConverter()
 	mainContainer.executeAfterContainerInitConverterArray()
 	mainContainer.Inject()
+	mainContainer.executeAfterObjectInjectArray()
 	mainContainer.executeAfterContainerInjectArray()
+	mainContainer.executeAfterRunArray()
 }
 
 func (mainContainer *MainContainer) Start() {
@@ -425,6 +442,7 @@ func (mainContainer *MainContainer) Start() {
 		mainContainer.InitConverter()
 		mainContainer.executeAfterContainerInitConverterArray()
 		mainContainer.Inject()
+		mainContainer.executeAfterObjectInjectArray()
 		mainContainer.executeAfterContainerInjectArray()
 		mainContainer.executeAfterRunArray()
 	}()
@@ -432,6 +450,7 @@ func (mainContainer *MainContainer) Start() {
 	case <-quitChannel:
 	case <-closeChannel:
 	}
+	mainContainer.executeAfterObjectDestroyArray()
 	mainContainer.executeAfterContainerDestroyArray()
 }
 
@@ -496,6 +515,21 @@ func (mainContainer *MainContainer) executeAfterContainerDestroyArray() {
 	})
 	for _, value := range mainContainer.AfterContainerDestroyArray {
 		if err := value.AfterContainerDestroyAction(mainContainer.ObjectContainer); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (mainContainer *MainContainer) executeAfterObjectInjectArray() {
+	for _, value := range mainContainer.AfterObjectInjectArray {
+		if err := value.AfterObjectInjectAction(); err != nil {
+			panic(err)
+		}
+	}
+}
+func (mainContainer *MainContainer) executeAfterObjectDestroyArray() {
+	for _, value := range mainContainer.AfterObjectDestroyArray {
+		if err := value.AfterObjectDestroyAction(); err != nil {
 			panic(err)
 		}
 	}

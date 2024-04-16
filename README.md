@@ -99,16 +99,207 @@ illusion强制使用application.property为属性文件，文件内容为key=val
 ### 属性的优先级
 命令行参数加载属性 > 系统环境变量加载属性 > application.property属性 > application-xxx.property属性
 
+
+## 依赖注入
+illusion依赖注入分为属性注入和对象注入
+### 属性注入
+属性注入是指对托管对象注入illusion加载的属性
+目前支持注入
+1. 所有go的基础类型和基础类型的指针
+2. 所有基础类型和基础类型指针的slice
+3. 所有key为string，value为所有基础类型和基础类型指针的map
+例如
+```
+application.property文件中的属性
+
+bool.bool=true
+bool.ptr=false
+float32.float32=3.2
+float32.ptr=-3.2
+float64.float64=6.4
+float64.ptr=-6.4
+int8.int8=8
+int8.ptr=-8
+int16.int16=16
+int16.ptr=-16
+int32.int32=32
+int32.ptr=-32
+int64.int64=64
+int64.ptr=-64
+int.int=128
+int.ptr=-128
+string.string=wwww
+string.ptr=-qqqqqq
+uint8.uint8=18
+uint8.ptr=18
+uint16.uint16=116
+uint16.ptr=116
+uint32.uint32=132
+uint32.ptr=132
+uint64.uint64=164
+uint64.ptr=164
+uint.uint=11212
+uint.ptr=11212
+int.slice=1,2,3,4,5
+int.map.k1=1
+int.map.k2=2
+
+
+
+type PropertyInjectTest struct {
+	Boolbool       bool     `property:"bool.bool"`
+	Boolptr        *bool    `property:"bool.ptr, true"`
+	Float32float32 float32  `property:"float32.float32, false"`
+	Float32ptr     *float32 `property:"float32.ptr"`
+	Float64float64 float64  `property:"float64.float64"`
+	Float64ptr     *float64 `property:"float64.ptr"`
+
+	Int8int8     int8    `property:"int8.int8"`
+	Int8ptr      *int8   `property:"int8.ptr"`
+	Int16int16   int16   `property:"int16.int16"`
+	Int16ptr     *int16  `property:"int16.ptr"`
+	Int32int32   int32   `property:"int32.int32"`
+	Int32ptr     *int32  `property:"int32.ptr"`
+	Int64int64   int64   `property:"int64.int64"`
+	Int64ptr     *int64  `property:"int64.ptr"`
+	Intint       int     `property:"int.int"`
+	Intptr       *int    `property:"int.ptr"`
+	Stringstring string  `property:"string.string"`
+	Stringptr    *string `property:"string.ptr"`
+	Uint8uint8   uint8   `property:"uint8.uint8"`
+	Uint8ptr     *uint8  `property:"uint8.ptr"`
+	Uint16uint16 uint16  `property:"uint16.uint16"`
+	Uint16ptr    *uint16 `property:"uint16.ptr"`
+	Uint32uint32 uint32  `property:"uint32.uint32"`
+	Uint32ptr    *uint32 `property:"uint32.ptr"`
+	Uint64uint64 uint64  `property:"uint64.uint64"`
+	Uint64ptr    *uint64 `property:"uint64.ptr"`
+	Uintuint     uint    `property:"uint.uint"`
+	Uintptr      *uint   `property:"uint.ptr"`
+	Uintptrq     *uint   `property:"uint.ptrq"`
+
+	IntSlice []int          `property:"int.slice, true"`
+	IntMap   map[string]int `property:"int.map, false"`
+}
+func main() {
+	propertyInjectTest := &PropertyInjectTest{}
+	illusion.Register(propertyInjectTest)
+	illusion.Start()
+}
+```
+1. 在想要注入的字段后面添加名为property的tag来表示要注入的属性名字，默认为注入不能为空，如果go程序中没有要注入的属性，会报错。
+如果想注入字段可以为空，可以在tag中的属性名后面加上", false"，如示例中的Float32float32字段。
+2. slice的注入，需要go中的属性值为逗号分隔的字符串，注入slice的时候，会自动把字符串转成slice
+3. map的注入，需要go中有多个key有共同前缀的属性，共同前缀就作为map的注入名称，不同的后缀作为map的key，这些key对应的value作为map的value，例如示例中IntMap字段
+### 对象注入
+除了属性注入，illusion还支持对象注入，对象注入支持对象指针注入和接口注入
+1. 对象指针注入
+```
+type TestA struct {
+
+}
+
+type TestB struct {
+	MTestA *TestA `require:"true"`
+}
+
+func main() {
+	illusion.Register(&TestA{})
+	illusion.Register(&TestB{})
+	illusion.Start()
+}
+
+```
+示例中TestA已经被注入到TestB。被注入的字段必须添加名为require的tag，没有require，属性不会被注入。
+当require的值为true时，注入不能为空，不然会保存，当require的值为false时，注入可以为空。
+illusion注册对象必须是指针，不然会报错。
+2. 接口注入
+```
+type TestInjectInterface interface {
+    PrintMessage()
+}
+
+type TestA struct {
+
+}
+
+func (testA *TestA) PrintMessage() {
+	fmt.Println("this is test a")
+}
+
+type TestB struct {
+	MTestA TestInjectInterface `require:"true"`
+}
+
+func main() {
+	illusion.Register(&TestA{})
+	illusion.Register(&TestB{})
+	illusion.Start()
+}
+
+```
+
+
+
+
+
 ## 静态代理
 illusion支持对托管对象的静态代理
+illusion的静态代理是基于接口代理的，代理对象和目标对象必须实现同一个接口，同时代理对象还要实现代理接口。例如
+
 ```
+//代理接口
 type Proxy interface {
     SupportInterface() reflect.Type
     SetTarget(target interface{})
 }
+//--------------------------------------------------------
+type TestTargetInterface interface {
+	PrintMessage()
+}
+
+type TestTarget struct {
+
+}
+
+func (testTarget *TestTarget) PrintMessage() {
+	fmt.Println("this is proxy target")
+}
+
+type TestTargetProxy struct {
+	Target interface{}
+}
+
+func (testTargetProxy *TestTargetProxy) PrintMessage() {
+	targetProxy, _ := testTargetProxy.Target.(TestTargetInterface)
+	fmt.Println("before target run")
+	targetProxy.PrintMessage()
+	fmt.Println("after target run")
+}
+
+type InjectObject struct {
+	Target TestTargetInterface `require:"true"`
+}
+
+func (testTargetProxy *TestTargetProxy) SupportInterface() reflect.Type {
+	return reflect.TypeOf(*new(TestTargetInterface))
+}
+func (testTargetProxy *TestTargetProxy) SetTarget(target interface{}) {
+	testTargetProxy.Target = target
+}
+
+
+func main() {
+	injectObject := &InjectObject{}
+	illusion.Register(&TestTarget{})
+	illusion.Register(&TestTargetProxy{})
+	illusion.Register(injectObject)
+	illusion.Start()
+}
 ```
-这是代理接口，被代理的对象必须实现了某个接口，而这个接口的类型需要作为SupportInterface()的返回值。SetTarget(target interface{})用来设置被代理对象。
-例子如下
+如果TestTargetProxy没有注册，那么injectObject中被注入的是TestTarget实例。注册了TestTargetProxy，那么injectObject中被注入的就是TestTargetProxy对象。
+
+
 ```
 
 ```

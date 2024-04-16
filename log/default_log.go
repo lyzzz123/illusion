@@ -7,7 +7,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
-	"reflect"
 	"runtime"
 	"strings"
 	"time"
@@ -63,10 +62,6 @@ func (defaultLog *DefaultLog) AfterObjectInjectAction() error {
 		)
 		logrus.SetOutput(writer)
 	}
-	return nil
-}
-
-func (defaultLog *DefaultLog) AfterContainerInjectAction(objectContainer map[reflect.Type]interface{}) error {
 	RegisterLog(defaultLog)
 	return nil
 }

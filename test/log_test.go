@@ -7,6 +7,6 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	illusion.TestStart()
+	illusion.Start()
 	log.Info("asdfasdf:{}, ff:{}", "ffff", 2)
 }
