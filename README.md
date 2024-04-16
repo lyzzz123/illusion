@@ -193,7 +193,7 @@ func main() {
 3. map的注入，需要go中有多个key有共同前缀的属性，共同前缀就作为map的注入名称，不同的后缀作为map的key，这些key对应的value作为map的value，例如示例中IntMap字段
 ### 对象注入
 除了属性注入，illusion还支持对象注入，对象注入支持对象指针注入和接口注入
-1. 对象指针注入
+#### 对象指针注入
 ```
 type TestA struct {
 
@@ -213,7 +213,7 @@ func main() {
 示例中TestA已经被注入到TestB。被注入的字段必须添加名为require的tag，没有require，属性不会被注入。
 当require的值为true时，注入不能为空，不然会保存，当require的值为false时，注入可以为空。
 illusion注册对象必须是指针，不然会报错。
-2. 接口注入
+#### 接口注入
 ```
 type TestInjectInterface interface {
     PrintMessage()
