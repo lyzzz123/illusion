@@ -31,9 +31,7 @@ func (testTargetProxy *TestTargetProxy) PrintMessage() {
 }
 
 func (testTargetProxy *TestTargetProxy) SupportInterface() reflect.Type {
-	ff := reflect.TypeOf(new(TestTargetInterface)).Elem()
-	fmt.Println(ff)
-	return ff
+	return reflect.TypeOf(new(TestTargetInterface)).Elem()
 }
 func (testTargetProxy *TestTargetProxy) SetTarget(target interface{}) {
 	testTargetProxy.Target = target
