@@ -30,15 +30,17 @@ func (testTargetProxy *TestTargetProxy) PrintMessage() {
 
 }
 
-type InjectObject struct {
-	Target TestTargetInterface `require:"true"`
-}
-
 func (testTargetProxy *TestTargetProxy) SupportInterface() reflect.Type {
-	return reflect.TypeOf(*new(TestTargetInterface))
+	ff := reflect.TypeOf(new(TestTargetInterface)).Elem()
+	fmt.Println(ff)
+	return ff
 }
 func (testTargetProxy *TestTargetProxy) SetTarget(target interface{}) {
 	testTargetProxy.Target = target
+}
+
+type InjectObject struct {
+	Target TestTargetInterface `require:"true"`
 }
 
 func TestProxy(t *testing.T) {
@@ -47,5 +49,6 @@ func TestProxy(t *testing.T) {
 	illusion.Register(&TestTargetProxy{})
 	illusion.Register(injectObject)
 	illusion.Start()
+	injectObject.Target.PrintMessage()
 	fmt.Println()
 }

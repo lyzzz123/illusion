@@ -51,6 +51,9 @@ func (containerLifeCycleTest *ContainerLifeCycleTest) AfterRunAction(objectConta
 	fmt.Println("AfterRunAction")
 	return nil
 }
+func (containerLifeCycleTest *ContainerLifeCycleTest) GetPriority() int{
+	return 1
+}
 
 func main() {
 	illusion.Register(&ContainerLifeCycleTest{})
@@ -238,7 +241,7 @@ func main() {
 }
 
 ```
-
+TestA实现了接口TestInjectInterface，那么TestA会被以接口的方式注入到TestB
 
 
 
@@ -269,25 +272,24 @@ func (testTarget *TestTarget) PrintMessage() {
 type TestTargetProxy struct {
 	Target interface{}
 }
-
+//要代理的接口方法
 func (testTargetProxy *TestTargetProxy) PrintMessage() {
 	targetProxy, _ := testTargetProxy.Target.(TestTargetInterface)
 	fmt.Println("before target run")
 	targetProxy.PrintMessage()
 	fmt.Println("after target run")
 }
-
-type InjectObject struct {
-	Target TestTargetInterface `require:"true"`
-}
-
+//代理接口的实现
 func (testTargetProxy *TestTargetProxy) SupportInterface() reflect.Type {
-	return reflect.TypeOf(*new(TestTargetInterface))
+	return reflect.TypeOf(new(TestTargetInterface)).Elem()
 }
 func (testTargetProxy *TestTargetProxy) SetTarget(target interface{}) {
 	testTargetProxy.Target = target
 }
 
+type InjectObject struct {
+	Target TestTargetInterface `require:"true"`
+}
 
 func main() {
 	injectObject := &InjectObject{}
@@ -299,8 +301,9 @@ func main() {
 ```
 如果TestTargetProxy没有注册，那么injectObject中被注入的是TestTarget实例。注册了TestTargetProxy，那么injectObject中被注入的就是TestTargetProxy对象。
 
-
 ```
+
+
 
 ```
 

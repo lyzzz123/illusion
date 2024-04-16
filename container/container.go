@@ -2,6 +2,7 @@ package container
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/lyzzz123/illusion/converter"
 	"github.com/lyzzz123/illusion/lifecycle"
 	"github.com/lyzzz123/illusion/proxy"
@@ -245,6 +246,7 @@ func (mainContainer *MainContainer) InjectInterface(objectType reflect.Type, obj
 	if injectCount >= 2 {
 		panic(fieldType.Type.String() + " has more than two instances")
 	} else if injectCount == 1 {
+		fmt.Println(fieldType.Type)
 		if proxy, ok := mainContainer.ProxyMap[fieldType.Type]; ok {
 			proxy.SetTarget(findInterface)
 			fieldValue.Set(reflect.ValueOf(proxy))
